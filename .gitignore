@@ -1,0 +1,52 @@
+# ── Secrets (NEVER commit these) ─────────────────────────────────────────────
+.env
+*.json
+!package.json
+
+# ── Reports output (generated files) ─────────────────────────────────────────
+reports_output/
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.installed.cfg
+lib/
+lib64/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Virtual environments ──────────────────────────────────────────────────────
+venv/
+env/
+ENV/
+.venv/
+.env.local
+
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
