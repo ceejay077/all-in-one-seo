@@ -74,7 +74,7 @@ def check_h1_keyword_match(h1_text: str, keywords: list[str]) -> H1KeywordResult
 
     try:
         message = client.messages.create(
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             max_tokens=200,
             messages=[{"role": "user", "content": prompt}],
         )
@@ -138,7 +138,7 @@ def analyze_content(url: str, html: str, keywords: list[str]) -> ContentAnalysis
 
     try:
         message = client.messages.create(
-            model="claude-3-5-haiku-20241022",
+            model="claude-haiku-4-5",
             max_tokens=600,
             messages=[{"role": "user", "content": prompt}],
         )

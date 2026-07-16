@@ -6,12 +6,31 @@ from __future__ import annotations
 import datetime
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any, Optional
 
 from jinja2 import Environment, FileSystemLoader
+from markupsafe import Markup, escape
 
 TEMPLATES_DIR = Path(__file__).parent.parent / "templates"
+
+_URL_RE = re.compile(r'(https?://[^\s<>"\']+)')
+
+
+def _linkify(value: Any) -> Markup:
+    """Turn any http(s) URLs inside a string into clickable <a> tags, escaping the rest."""
+    if value is None:
+        return Markup("")
+    parts = _URL_RE.split(str(value))
+    out = []
+    for i, part in enumerate(parts):
+        if i % 2 == 1:  # captured URL segment
+            safe_url = escape(part)
+            out.append(f'<a href="{safe_url}" target="_blank" rel="noopener noreferrer">{safe_url}</a>')
+        else:
+            out.append(str(escape(part)))
+    return Markup("".join(out))
 
 
 def _status_for_page(page_data: dict) -> str:
@@ -87,6 +106,7 @@ def generate_html_report(
     Returns the output path.
     """
     env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
+    env.filters["linkify"] = _linkify
     template = env.get_template("report.html")
 
     pages = scan_data.get("pages", {})

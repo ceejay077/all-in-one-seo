@@ -32,6 +32,14 @@ def _clarity(html: str, soup: BeautifulSoup) -> tuple[bool, str]:
     return False, ""
 
 
+def _google_tag_manager(html: str, soup: BeautifulSoup) -> tuple[bool, str]:
+    match = re.search(r"GTM-[A-Z0-9]+", html)
+    if match or "googletagmanager.com/gtm.js" in html or "googletagmanager.com/ns.html" in html:
+        container = f" ({match.group(0)})" if match else ""
+        return True, f"Google Tag Manager detected{container}"
+    return False, ""
+
+
 def _google_analytics(html: str, soup: BeautifulSoup) -> tuple[bool, str]:
     ga4 = bool(re.search(r"G-[A-Z0-9]+", html))
     ua = bool(re.search(r"UA-\d+-\d+", html))
@@ -119,6 +127,7 @@ def check_tracking(html: str) -> list[TrackingResult]:
 
     checks = [
         ("Bing Webmaster Tools", _bing_webmaster),
+        ("Google Tag Manager", _google_tag_manager),
         ("Microsoft Clarity", _clarity),
         ("Google Analytics", _google_analytics),
         ("Google Search Console", _search_console),
@@ -135,6 +144,23 @@ def check_tracking(html: str) -> list[TrackingResult]:
             detail=detail,
             status="ok" if found else "critical",
         ))
+
+    # GTM loads its configured tags (GA4, Search Console verification, etc.) at
+    # runtime from its own container payload — that config isn't present in the
+    # static HTML, so a direct-detection miss doesn't mean the tag is absent.
+    # Downgrade a "not found" to a warning instead of a false-negative critical.
+    gtm_result = next((r for r in results if r.name == "Google Tag Manager"), None)
+    if gtm_result and gtm_result.found:
+        for name in ("Google Analytics", "Google Search Console"):
+            r = next((r for r in results if r.name == name), None)
+            if r and not r.found:
+                r.status = "warn"
+                r.detail = (
+                    f"Not directly detected in static HTML, but {gtm_result.detail} — "
+                    f"{name} may be configured inside the GTM container (tags load at "
+                    "runtime and aren't visible in page source). Verify directly in "
+                    "Google Tag Manager, or in Google Analytics/Search Console."
+                )
 
     results.extend(_detect_other_trackers(html))
     return results

@@ -433,7 +433,7 @@
   <aside class="sidebar">
     <div class="sidebar-logo">
       <h1>🔍 SEO Audit</h1>
-      <p>{{ url }}</p>
+      <p><a href="{{ url }}" target="_blank" rel="noopener noreferrer" style="color:inherit">{{ url }}</a></p>
     </div>
     <nav>
       <a href="#summary">📊 Summary</a>
@@ -459,7 +459,7 @@
     <!-- Header -->
     <div class="report-header">
       <h2>SEO Audit Report — {{ scan_name }}</h2>
-      <div class="meta">{{ url }} · {{ created_at }} · {{ total_pages }} pages crawled</div>
+      <div class="meta"><a href="{{ url }}" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">{{ url }}</a> · {{ created_at }} · {{ total_pages }} pages crawled</div>
       <div class="score-row">
         <div class="score-card">
           <div class="number" style="color: var(--critical)">{{ critical_count }}</div>
@@ -493,7 +493,7 @@
       <table class="check-table">
         <thead><tr><th>Metric</th><th>Value</th></tr></thead>
         <tbody>
-          <tr><td>Target URL</td><td>{{ url }}</td></tr>
+          <tr><td>Target URL</td><td><a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ url }}</a></td></tr>
           <tr><td>Keywords</td><td>{{ keywords | join(', ') }}</td></tr>
           <tr><td>Total Pages Crawled</td><td>{{ total_pages }}</td></tr>
           <tr><td>Critical Issues</td><td><span class="badge badge-critical">🔴 {{ critical_count }}</span></td></tr>
@@ -517,7 +517,7 @@
               {% else %}<span class="badge badge-critical">🔴 MISSING</span>{% endif %}
             </td>
             <td style="font-weight:600">{{ r.name }}</td>
-            <td style="color:var(--text-dim)">{{ r.detail or ('✔ Detected' if r.found else '✘ Not found') }}</td>
+            <td style="color:var(--text-dim)">{{ (r.detail or ('✔ Detected' if r.found else '✘ Not found')) | linkify }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -538,7 +538,7 @@
               {% else %}<span class="badge badge-critical">🔴 MISSING</span>{% endif %}
             </td>
             <td style="font-weight:600">{{ r.name }}</td>
-            <td style="color:var(--text-dim)">{{ r.detail }}</td>
+            <td style="color:var(--text-dim)">{{ r.detail | linkify }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -559,7 +559,7 @@
               {% else %}<span class="badge badge-critical">🔴 CRITICAL</span>{% endif %}
             </td>
             <td style="font-weight:600">{{ r.name }}</td>
-            <td style="color:var(--text-dim)">{{ r.detail }}</td>
+            <td style="color:var(--text-dim)">{{ r.detail | linkify }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -571,7 +571,7 @@
       {% for r in page_results %}{% if r.status == 'critical' %}{% set worst.status = 'critical' %}{% elif r.status == 'warn' and worst.status == 'ok' %}{% set worst.status = 'warn' %}{% endif %}{% endfor %}
       <div class="page-card">
         <div class="page-card-header {{ worst.status }}" onclick="toggleCard(this)">
-          <span class="page-card-url">{{ url }}</span>
+          <span class="page-card-url"><a href="{{ url }}" target="_blank" rel="noopener noreferrer" style="color:inherit" onclick="event.stopPropagation()">{{ url }}</a></span>
           <span>
             {% if worst.status == 'ok' %}<span class="badge badge-ok">🔵 OK</span>
             {% elif worst.status == 'warn' %}<span class="badge badge-warn">🟠 WARN</span>
@@ -591,7 +591,7 @@
                   {% else %}<span class="badge badge-critical">🔴 CRITICAL</span>{% endif %}
                 </td>
                 <td>{{ r.name }}</td>
-                <td style="color:var(--text-dim)">{{ r.detail }}</td>
+                <td style="color:var(--text-dim)">{{ r.detail | linkify }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -608,7 +608,7 @@
       {% set worst_status = 'critical' if (meta.title_status == 'critical' or meta.description_status == 'critical' or meta.missing_alt_count > 0) else ('warn' if (meta.title_status == 'warn' or meta.description_status == 'warn') else 'ok') %}
       <div class="page-card" data-url="{{ meta.url }}">
         <div class="page-card-header {{ worst_status }}" onclick="toggleCard(this)">
-          <span class="page-card-url">{{ meta.url }}</span>
+          <span class="page-card-url"><a href="{{ meta.url }}" target="_blank" rel="noopener noreferrer" style="color:inherit" onclick="event.stopPropagation()">{{ meta.url }}</a></span>
           <span>
             {% if worst_status == 'ok' %}<span class="badge badge-ok">🔵 OK</span>
             {% elif worst_status == 'warn' %}<span class="badge badge-warn">🟠 WARN</span>
@@ -656,7 +656,7 @@
                 {% for img in meta.images %}
                 <tr>
                   <td>{% if img.has_alt %}🔵{% else %}🔴{% endif %}</td>
-                  <td>{{ img.src }}</td>
+                  <td>{{ img.src | linkify }}</td>
                   <td class="{{ '' if img.has_alt else 'missing-alt' }}">
                     {{ img.alt if img.has_alt else 'MISSING ALT TEXT' }}
                   </td>
@@ -679,7 +679,7 @@
       </p>
       {% for r in ai_results %}
       <div class="ai-card">
-        <div class="ai-card-url">{{ r.url }}</div>
+        <div class="ai-card-url"><a href="{{ r.url }}" target="_blank" rel="noopener noreferrer" style="color:inherit">{{ r.url }}</a></div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center">
           {% if r.is_seo_friendly %}
             <span class="badge badge-ok">🔵 SEO-Friendly</span>

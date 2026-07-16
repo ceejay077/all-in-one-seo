@@ -9,6 +9,29 @@ from typing import Optional
 
 from bs4 import BeautifulSoup
 
+# Analytics/ad tracking pixels (Facebook Pixel, GA, GTM, LinkedIn Insight, etc.) are
+# 1x1 <img> tags used for tracking, not content — they don't need alt text and
+# shouldn't be flagged in the image accessibility audit.
+_TRACKING_PIXEL_DOMAINS = re.compile(
+    r"(facebook\.com/tr|google-analytics\.com|googletagmanager\.com|doubleclick\.net|"
+    r"linkedin\.com/(px|li/track)|px\.ads\.linkedin\.com|"
+    r"ads-twitter\.com|analytics\.tiktok\.com|bat\.bing\.com|pinterest\.com/v3)",
+    re.I,
+)
+
+
+def _is_tracking_pixel(img) -> bool:
+    """True if an <img> tag is a tracking pixel rather than real content."""
+    if img.find_parent("noscript") is not None:
+        return True
+    width = (img.get("width") or "").strip()
+    height = (img.get("height") or "").strip()
+    if width in ("0", "1") and height in ("0", "1"):
+        return True
+    if _TRACKING_PIXEL_DOMAINS.search(img.get("src", "")):
+        return True
+    return False
+
 
 @dataclass
 class ImageInfo:
@@ -61,6 +84,8 @@ def check_metadata(html: str, url: str) -> MetadataResult:
     # ── Images ────────────────────────────────────────────────────────────────
     images: list[ImageInfo] = []
     for img in soup.find_all("img"):
+        if _is_tracking_pixel(img):
+            continue
         src = img.get("src", "")
         alt = img.get("alt", None)
         has_alt = alt is not None and alt.strip() != ""

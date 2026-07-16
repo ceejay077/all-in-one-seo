@@ -115,11 +115,14 @@ def check_h1(html: str) -> OnPageResult:
     )
 
 
+_REQUEST_HEADERS = {"User-Agent": "SEOAuditBot/1.0 (+https://github.com/seo-audit)"}
+
+
 def check_sitemap(base_url: str) -> OnPageResult:
     """Fetch and validate sitemap.xml."""
     sitemap_url = urljoin(base_url, "/sitemap.xml")
     try:
-        resp = requests.get(sitemap_url, timeout=15)
+        resp = requests.get(sitemap_url, timeout=15, headers=_REQUEST_HEADERS)
         if resp.status_code == 404:
             return OnPageResult(
                 name="sitemap.xml",
@@ -164,7 +167,7 @@ def check_robots_txt(base_url: str) -> OnPageResult:
     """Fetch and validate robots.txt."""
     robots_url = urljoin(base_url, "/robots.txt")
     try:
-        resp = requests.get(robots_url, timeout=15)
+        resp = requests.get(robots_url, timeout=15, headers=_REQUEST_HEADERS)
         if resp.status_code == 404:
             return OnPageResult(
                 name="robots.txt",

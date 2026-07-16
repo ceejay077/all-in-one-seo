@@ -5,6 +5,7 @@ Windows-safe: no raw emoji characters, uses Rich markup only.
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Optional
 
 from rich import box
@@ -16,6 +17,26 @@ from rich.text import Text
 from rich.tree import Tree
 
 console = Console(force_terminal=True)
+
+_URL_RE = re.compile(r'https?://[^\s<>"\')\]]+')
+
+
+def _linkify(value: str, base_style: str = "") -> Text:
+    """Render a string as Rich Text with any http(s) URLs turned into clickable
+    terminal hyperlinks (OSC 8), for terminals that support it (Windows Terminal,
+    VS Code, iTerm2, etc.)."""
+    text = Text(style=base_style)
+    pos = 0
+    for m in _URL_RE.finditer(value):
+        if m.start() > pos:
+            text.append(value[pos:m.start()])
+        url = m.group(0)
+        link_style = f"{base_style} link {url}".strip()
+        text.append(url, style=link_style)
+        pos = m.end()
+    if pos < len(value):
+        text.append(value[pos:])
+    return text
 
 # ── Status helpers ────────────────────────────────────────────────────────────
 
@@ -82,7 +103,7 @@ def print_scans_list(scans: list[dict]) -> None:
         table.add_row(
             str(i),
             scan.get("scan_name", ""),
-            scan.get("url", ""),
+            _linkify(scan.get("url", ""), "cyan"),
             scan.get("created_at", "")[:19].replace("T", " "),
         )
 
@@ -120,7 +141,7 @@ def print_check_results(results: list, title: str) -> None:
         found = getattr(r, "found", True)
 
         status_cell = _status_text(status, status.upper())
-        table.add_row(status_cell, name, detail or ("Found" if found else "Not found"))
+        table.add_row(status_cell, name, _linkify(detail or ("Found" if found else "Not found"), "white"))
 
     console.print(table)
 
@@ -155,7 +176,7 @@ def print_metadata_results(meta_results: list) -> None:
         )
         console.print(Panel(
             panel_content,
-            title=f"[cyan]{url[:80]}[/cyan]",
+            title=_linkify(url[:80], "cyan"),
             border_style=STATUS_COLORS.get(worst, "bright_blue"),
             padding=(0, 1),
         ))
@@ -207,7 +228,7 @@ def print_ai_results(ai_results: list) -> None:
 
         console.print(Panel(
             content,
-            title=f"[cyan]{url[:80]}[/cyan]",
+            title=_linkify(url[:80], "cyan"),
             border_style=STATUS_COLORS.get(status, "bright_blue"),
             padding=(0, 1),
         ))
@@ -236,16 +257,19 @@ def print_site_tree(pages: dict, tree_data: dict, max_depth: int = 4) -> None:
         color = STATUS_COLORS.get(status, "white")
         markers = {"ok": "[OK]", "warn": "[!]", "critical": "[X]"}
         marker = markers.get(status, "")
-        label = Text(f"{marker} {url}", style=color)
         if page and hasattr(page, "status_code") and page.status_code not in (0, 200):
-            label = Text(f"[ERR {page.status_code}] {url}", style="bright_red")
+            label = Text(f"[ERR {page.status_code}] ", style="bright_red")
+            label.append_text(_linkify(url, "bright_red"))
+        else:
+            label = Text(f"{marker} ", style=color)
+            label.append_text(_linkify(url, color))
 
         branch = tree_node.add(label)
         for child in node.get("children", []):
             _add_branch(branch, child, depth + 1)
 
     if tree_data:
-        root_label = Text(tree_data.get("url", "Root"), style="bold bright_cyan")
+        root_label = _linkify(tree_data.get("url", "Root"), "bold bright_cyan")
         tree = Tree(root_label, guide_style="bright_cyan")
         for child in tree_data.get("children", []):
             _add_branch(tree, child, depth=1)
@@ -316,7 +340,7 @@ def print_summary(scan_data: dict) -> None:
     table.add_column("Value", style="bold bright_cyan")
     table.add_row("Total pages crawled", str(total))
     table.add_row("Pages with critical issues", f"[bright_red]{critical_pages}[/bright_red]")
-    table.add_row("Target URL", scan_data.get("url", ""))
+    table.add_row("Target URL", _linkify(scan_data.get("url", ""), "bright_cyan"))
     table.add_row("Keywords", ", ".join(scan_data.get("keywords", [])))
     console.print(table)
     console.print()
